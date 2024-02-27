@@ -1,0 +1,109 @@
+esphome:
+  name: espilot
+  on_boot:
+    then:
+      - script.execute: update_output
+
+esp8266:
+  board: esp01_1m
+  restore_from_flash: true
+
+preferences:
+    flash_write_interval: 10min
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  password: !secret api_password
+  reboot_timeout: 0s
+
+ota:
+  password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Espilot Fallback Hotspot"
+    password: !secret ap_password
+
+captive_portal:
+
+web_server:
+    port: 80
+    auth:
+        username: admin
+        password: !secret web_server_password
+
+select:
+  - platform: template
+    id: ordre
+    name: "Ordre"
+    optimistic: true
+    options:
+      - confort
+      - eco
+      - hg
+      - arret
+    restore_value: yes
+    initial_option: arret
+    on_value:
+      then:
+        - script.execute: update_output
+
+script:
+  - id: update_output
+    then:
+      - logger.log:
+          format: "Ordre pilote: %s"
+          args: ["id(ordre).state.c_str()"]
+      - if:
+          condition:
+            - lambda: |-
+                return (strcmp(id(ordre).state.c_str(), "arret") == 0);
+          then:
+            lambda: |-
+              id(gpio_neg).turn_off();
+              id(gpio_pos).turn_on();
+      - if:
+          condition:
+            - lambda: |- 
+                return (strcmp(id(ordre).state.c_str(), "hg") == 0);
+          then:
+            lambda: |-
+              id(gpio_neg).turn_on();
+              id(gpio_pos).turn_off();
+      - if:
+          condition:
+            - lambda: |- 
+                return (strcmp(id(ordre).state.c_str(), "eco") == 0);
+          then:
+            lambda: |-
+              id(gpio_neg).turn_on();
+              id(gpio_pos).turn_on();
+      - if:
+          condition:
+            - lambda: |- 
+                return (strcmp(id(ordre).state.c_str(), "confort") == 0);
+          then:
+            lambda: |-
+              id(gpio_neg).turn_off();
+              id(gpio_pos).turn_off();
+
+output:
+  - platform: gpio
+    pin: 4
+    id: gpio_neg
+    inverted: true
+  - platform: gpio
+    pin: 5
+    id: gpio_pos
+    inverted: true
+
+status_led:
+  pin:
+    number: 2

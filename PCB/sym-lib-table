@@ -1,0 +1,5 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "wemos_mini")(type "Legacy")(uri "D:/ownCloud/ESPilot/wemos-d1-mini-kicad-master/libraries/wemos_mini.lib")(options "")(descr ""))
+  (lib (name "ESPilot-rescue")(type "KiCad")(uri "${KIPRJMOD}/ESPilot-rescue.kicad_sym")(options "")(descr ""))
+)
